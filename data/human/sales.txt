@@ -43,6 +43,7 @@ shipyard "Lionheart Basics"
 	"Headhunter"
 	"Raven"
 	"Mule"
+	"Escape Pod"
 
 shipyard "Lionheart Advanced"
 	"Aerie"
