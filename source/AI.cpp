@@ -28,6 +28,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 #include "Hardpoint.h"
 #include "JumpType.h"
 #include "image/Mask.h"
+#include "Logger.h"
 #include "Messages.h"
 #include "Minable.h"
 #include "pi.h"
@@ -539,6 +540,11 @@ void AI::UpdateKeys(PlayerInfo &player, const Command &activeCommands)
 	// The commands below here only apply if you have escorts or fighters.
 	if(player.Ships().size() < 2)
 		return;
+
+	if (activeCommands.Has(Command::ESCAPE_PODS))
+	{
+		Logger::LogInfo("escape_pods triggered");
+	}
 
 	// Toggle the "deploy" command for the fleet or selected ships.
 	if(activeCommands.Has(Command::DEPLOY))
