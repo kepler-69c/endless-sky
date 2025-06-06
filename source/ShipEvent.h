@@ -68,6 +68,8 @@ public:
 		JUMP = (1 << 9),
 		// This ship just met another ship for the first time
 		ENCOUNTER = (1 << 10),
+		// An escape pod was launched from a destroyed shup.
+		ESCAPE_POD_LAUNCHED = (1 << 11),
 	};
 
 
