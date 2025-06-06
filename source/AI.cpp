@@ -544,6 +544,44 @@ void AI::UpdateKeys(PlayerInfo &player, const Command &activeCommands)
 	if (activeCommands.Has(Command::ESCAPE_PODS))
 	{
 		Logger::LogInfo("escape_pods triggered");
+		Ship* currentFlagship = player.Flagship(); 
+		if (currentFlagship) 
+		{
+			// get all pods of the flagship
+			std::vector<std::shared_ptr<Ship>> escapePodsInBays;
+			for (const Ship::Bay &bay : currentFlagship->Bays())
+				if (bay.ship && bay.ship->Attributes().Category() == "Pod") 
+				{
+					Logger::LogInfo("pod added to ship");
+					escapePodsInBays.push_back(bay.ship);
+				}
+
+			if (!escapePodsInBays.empty())
+			{
+				// command all found escape pods to deploy
+				for (const auto& pod : escapePodsInBays) {
+					pod->SetCommands(Command::DEPLOY);
+					if (pod->IsYours()) { // Ensure player-owned pods get deploy order
+						pod->SetDeployOrder(true);
+					}
+				}
+
+				std::shared_ptr<Ship> newFlagshipPod = escapePodsInBays.front();
+
+				// A ship in a bay has its 'system' pointer as nullptr. Set it to the carrier's system before
+				// making it the flagship to prevent crashes when the engine checks the flagship's system.
+				if (newFlagshipPod->GetSystem() == nullptr) {
+					const System* systemForPod = player.GetSystem();
+					newFlagshipPod->SetSystem(systemForPod);
+				}
+				player.SetFlagship(*newFlagshipPod);
+				Messages::Add("All escape pods deploying. " + newFlagshipPod->Name() + " is now your flagship.", Messages::Importance::High);
+			}
+			else
+			{
+				Messages::Add("No escape pods available on " + currentFlagship->Name() + ".", Messages::Importance::High);
+			}
+		}
 	}
 
 	// Toggle the "deploy" command for the fleet or selected ships.
