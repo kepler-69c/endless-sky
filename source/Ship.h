@@ -466,6 +466,8 @@ public:
 	// Adjust the positions and velocities of any visible carried fighters or
 	// drones. If any are visible, return true.
 	bool PositionFighters() const;
+	// Check if this ship carries any escape pods.
+	bool HasEscapePods() const;
 
 	// Get cargo information.
 	CargoHold &Cargo();

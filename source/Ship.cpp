@@ -3255,8 +3255,12 @@ int Ship::TakeDamage(vector<Visual> &visuals, const DamageDealt &damage, const G
 		type |= ShipEvent::DESTROY;
 
 		if(IsYours())
-			Messages::Add("Your " + DisplayModelName() +
-				" \"" + Name() + "\" has been destroyed.", Messages::Importance::Highest);
+		{
+			std::string destroyMsg = "Your " + DisplayModelName() + " \"" + Name() + "\" has been destroyed.";
+			if(HasEscapePods())
+				destroyMsg += " You have escaped in an escape pod.";
+			Messages::Add(destroyMsg, Messages::Importance::Highest);
+		}
 	}
 
 	// Inflicted heat damage may also disable a ship, but does not trigger a "DISABLE" event.
@@ -3457,7 +3461,7 @@ const vector<Ship::Bay> &Ship::Bays() const
 
 
 
-// Adjust the positions and velocities of any visible carried fighters or
+// Adjust the positions and velocities of any visible carried fighters, pods or
 // drones. If any are visible, return true.
 bool Ship::PositionFighters() const
 {
@@ -3472,6 +3476,17 @@ bool Ship::PositionFighters() const
 			bay.ship->zoom = zoom;
 		}
 	return hasVisible;
+}
+
+
+
+// Check if the ship carries any pods that could be launched.
+bool Ship::HasEscapePods() const
+{
+	for(const Bay &bay : bays)
+		if(bay.ship && bay.category == "Pod")
+			return true;
+	return false;
 }
 
 
