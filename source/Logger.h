@@ -23,8 +23,9 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 // Default static logging facility, different programs might have different
 // conventions and requirements on how they handle logging, so the running
 // program should register its preferred logging facility when starting up.
-class Logger {
+class  Logger {
 public:
 	static void SetLogErrorCallback(std::function<void(const std::string &message)> callback);
 	static void LogError(const std::string &message);
+	static void LogInfo(const std::string &message);
 };

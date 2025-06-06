@@ -22,7 +22,7 @@ using namespace std;
 
 namespace {
 	function<void(const string &message)> logErrorCallback = nullptr;
-	mutex logErrorMutex;
+	mutex logMutex;
 }
 
 
@@ -36,10 +36,19 @@ void Logger::SetLogErrorCallback(function<void(const string &message)> callback)
 
 void Logger::LogError(const string &message)
 {
-	lock_guard<mutex> lock(logErrorMutex);
+	lock_guard<mutex> lock(logMutex);
 	// Log by default to stderr.
 	cerr << message << endl;
 	// Perform additional logging through callback if any is registered.
 	if(logErrorCallback)
 		logErrorCallback(message);
+}
+
+
+
+void Logger::LogInfo(const string &message)
+{
+	lock_guard<mutex> lock(logMutex);
+	// Log by default to stdout.
+	cout << message << endl;
 }
