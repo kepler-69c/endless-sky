@@ -3152,8 +3152,7 @@ ship "Escape Pod"
 		"cost" 40000
 		"shields" 300
 		"hull" 600
-		"automaton" 1 # TODO: how to make the ship unpilotable?
-		"required crew" 0
+		"required crew" 1
 		"bunks" 3
 		"mass" 65
 		"drag" 1.7

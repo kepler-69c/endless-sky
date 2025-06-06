@@ -55,6 +55,7 @@ shipyard "Betelgeuse Basics"
 	"Heavy Shuttle"
 	"Berserker"
 	"Firebird"
+	"Escape Pod"
 
 shipyard "Betelgeuse Advanced"
 	"Leviathan"
