@@ -468,6 +468,8 @@ public:
 	bool PositionFighters() const;
 	// Check if this ship carries any escape pods.
 	bool HasEscapePods() const;
+	// Remove a ship from the bay without deploying
+	bool RemoveShipFromBay(const std::shared_ptr<Ship> &shipToRemove);
 
 	// Get cargo information.
 	CargoHold &Cargo();

@@ -1745,6 +1745,14 @@ void Ship::Launch(list<shared_ptr<Ship>> &ships, vector<Visual> &visuals)
 			&& ((bay.ship->Commands().Has(Command::DEPLOY) && !Random::Int(40 + 20 * !bay.ship->attributes.Get("automaton")))
 			|| (ejecting && !Random::Int(6))))
 		{
+			// Do not launch escap pods via normal DEPLOY command
+			if(!ejecting && bay.ship->Attributes().Category() == "Pod") {
+				Logger::LogInfo("not ejecting pod");
+				// clear any deploy orders
+				if (bay.ship->HasDeployOrder())
+					bay.ship->SetDeployOrder(false);
+				continue;
+			}
 			// Resupply any ships launching of their own accord.
 			if(!ejecting)
 			{
@@ -3062,10 +3070,16 @@ double Ship::DragForce() const
 
 int Ship::RequiredCrew() const
 {
+	// Drones do net need crew
 	if(attributes.Get("automaton"))
 		return 0;
-
-	// Drones do not need crew, but all other ships need at least one.
+	// Escape pods require no crew while in a bay (currentSystem == nullptr).
+	// Also, don't require crew i fthe pod is landed on a planet.
+	if(attributes.Category() == "Pod" &&
+		(!currentSystem || GetPlanet()))
+		return 0;
+	
+	// All other ships need at least one.
 	return max<int>(1, attributes.Get("required crew"));
 }
 
@@ -3083,6 +3097,7 @@ int Ship::CrewValue() const
 
 void Ship::AddCrew(int count)
 {
+	Logger::LogInfo("AddCrew: add "+to_string(count)+" to "+Name());
 	crew = min<int>(crew + count, attributes.Get("bunks"));
 }
 
@@ -3486,6 +3501,22 @@ bool Ship::HasEscapePods() const
 	for(const Bay &bay : bays)
 		if(bay.ship && bay.category == "Pod")
 			return true;
+	return false;
+}
+
+
+
+bool Ship::RemoveShipFromBay(const std::shared_ptr<Ship>& shipToRemove)
+{
+	for (Bay &bay : bays)
+	{
+		if (bay.ship == shipToRemove)
+		{
+			carriedMass -= bay.ship->Mass();
+			bay.ship.reset();
+			return true;
+		}
+	}
 	return false;
 }
 
