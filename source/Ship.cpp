@@ -3209,7 +3209,7 @@ double Ship::CurrentSpeed() const
 // DamageDealt from that weapon. The return value is a ShipEvent type,
 // which may be a combination of PROVOKED, DISABLED, and DESTROYED.
 // Create any target effects as sparks.
-int Ship::TakeDamage(vector<Visual> &visuals, const DamageDealt &damage, const Government *sourceGovernment)
+int Ship::TakeDamage(vector<Visual> &visuals, const DamageDealt &damage, const Government *sourceGovernment, PlayerInfo &player)
 {
 	damageOverlayTimer = TOTAL_DAMAGE_FRAMES;
 
@@ -3266,6 +3266,9 @@ int Ship::TakeDamage(vector<Visual> &visuals, const DamageDealt &damage, const G
 	}
 	if(!wasDestroyed && IsDestroyed())
 	{
+		if(HasEscapePods())
+	        DeployEscapePods(player);
+
 		type |= ShipEvent::DESTROY;
 
 		if(IsYours())
@@ -3548,6 +3551,7 @@ void Ship::DeployEscapePods(PlayerInfo &player)
 	if (escapePods.empty())
 	{
 		Messages::Add("No escape pods available on " + Name() + ".", Messages::Importance::High);
+		Logger::LogInfo("No escape pods available on " + Name() + ".");
 		return;
 	}
 
@@ -3564,42 +3568,39 @@ void Ship::DeployEscapePods(PlayerInfo &player)
 		// Set initial velocity, position
 		Angle launchAngle = this->Facing() + Angle::Random(45) - Angle::Random(45);
 		Point launchPos = this->Position();
-		Point launchVel = this->Velocity() + launchAngle.Unit() * (pod->MaxVelocity() * 0.8); // escape as fast as possible
+		Point launchVel = this->Velocity() + launchAngle.Unit() * pod->MaxVelocity(); // escape as fast as possible
 		pod->Place(launchPos, launchVel, launchAngle, false);
 
 		// Crew transfer; Transfer as much crew as possible
 		int podMaxCrew = pod->Attributes().Get("bunks") - pod->Crew();
 		int podRequiredCrew = pod->RequiredCrew();
+		// currently, the game can only handle crew > RequiredCrew in the flagship, so for
+		// all other pods wel'll only transfer crew = RequiredCrew
+		int podTransferableCrew = firstPod ? podMaxCrew : podRequiredCrew;
 		int flagshipCrew = this->Crew();
 		int crewToTransfer;
 		Logger::LogInfo(pod->Name() + " has current/max/required crew: " + to_string(pod->Crew()) + "/" + to_string(podMaxCrew) + "/" + to_string(podRequiredCrew));
 
 		if (podMaxCrew > 0 && flagshipCrew > 0)
 		{
-			// currently, the game can only handle crew > RequiredCrew in the flagship, so for
-			// all other pods wel'll only transfer crew = RequiredCrew
-			if(firstPod)
-			{
-				firstPod = false;
-				crewToTransfer = min(flagshipCrew, podMaxCrew);
-			}
-			else
-				crewToTransfer = min(flagshipCrew, podRequiredCrew);
-			
+			crewToTransfer = min(flagshipCrew, podTransferableCrew);
 			Logger::LogInfo("-> Transferring " + to_string(crewToTransfer) + " crew to " + pod->Name());
 			this->AddCrew(-crewToTransfer);
 			pod->AddCrew(crewToTransfer);
 		}
+
+		if(firstPod)
+			firstPod = false;
 
 		// queue ship to be rendered from the next frame on
 		player.AddShipNextFrame(pod);
 	}
 
 	std::shared_ptr<Ship> newFlagshipPod = escapePods.front();
-	// The new flagship becomes the first ship, and it becomes the parent of all other ships
+	// The new flagship becomes the first ship, and is set as the parent of all other ships
 	player.SetFlagship(*newFlagshipPod);
-	Messages::Add(to_string(escapePods.size())+"escape pods deploying. "+newFlagshipPod->Name()+
-		" is now your flagship.", Messages::Importance::High);
+	Messages::Add("Deployed " + to_string(escapePods.size()) + " escape pods. " +
+		newFlagshipPod->Name() + " is now your flagship.", Messages::Importance::Highest);
 }
 
 

@@ -2477,7 +2477,7 @@ void Engine::DoCollisions(Projectile &projectile)
 
 				// Only directly targeted ships get provoked by blast weapons.
 				int eventType = ship->TakeDamage(visuals, damage.CalculateDamage(*ship, ship == hit),
-					targeted ? gov : nullptr);
+					targeted ? gov : nullptr, player);
 				if(eventType)
 					eventQueue.emplace_back(gov, ship->shared_from_this(), eventType);
 			}
@@ -2493,7 +2493,7 @@ void Engine::DoCollisions(Projectile &projectile)
 		{
 			if(collisionType == CollisionType::SHIP)
 			{
-				int eventType = shipHit->TakeDamage(visuals, damage.CalculateDamage(*shipHit), gov);
+				int eventType = shipHit->TakeDamage(visuals, damage.CalculateDamage(*shipHit), gov, player);
 				if(eventType)
 					eventQueue.emplace_back(gov, shipHit, eventType);
 			}
@@ -2550,7 +2550,7 @@ void Engine::DoWeather(Weather &weather)
 		for(Body *body : affectedShips)
 		{
 			Ship *hit = reinterpret_cast<Ship *>(body);
-			hit->TakeDamage(visuals, damage.CalculateDamage(*hit), nullptr);
+			hit->TakeDamage(visuals, damage.CalculateDamage(*hit), nullptr, player);
 		}
 	}
 }
