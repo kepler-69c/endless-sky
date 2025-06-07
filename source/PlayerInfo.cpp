@@ -1240,12 +1240,8 @@ void PlayerInfo::AddShipNextFrame(const shared_ptr<Ship> &ship)
 // retrieve all queued ships that should be added to your fleet in the next frame
 void PlayerInfo::RetrieveShipsToAddNextFrame(std::list<std::shared_ptr<Ship>>& outList)
 {
-	for(const auto& ship : shipsToAddNextFrame)
-		Logger::LogInfo("RetrieveShipsToAddToWorld: "+ship->Name()+", crew: "+to_string(ship->Crew()));
 	if (!shipsToAddNextFrame.empty())
-	{
 		outList.splice(outList.end(), shipsToAddNextFrame);
-	}
 }
 
 

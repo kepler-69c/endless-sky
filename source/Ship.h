@@ -468,10 +468,15 @@ public:
 	// Adjust the positions and velocities of any visible carried fighters or
 	// drones. If any are visible, return true.
 	bool PositionFighters() const;
-	// Check if this ship carries any escape pods.
-	bool HasEscapePods() const;
 	// Remove a ship from the bay without deploying
 	bool RemoveShipFromBay(const std::shared_ptr<Ship> &shipToRemove);
+
+	// Check if this ship carries any escape pods.
+	bool HasEscapePods() const;
+	// Get all escape pods that this ship carries.
+	std::vector<std::shared_ptr<Ship>> GetEscapePods() const;
+	// Deploy all escape pods that this ship carries.
+	void DeployEscapePods(PlayerInfo &player);
 
 	// Get cargo information.
 	CargoHold &Cargo();

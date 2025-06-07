@@ -546,75 +546,7 @@ void AI::UpdateKeys(PlayerInfo &player, const Command &activeCommands)
 		Logger::LogInfo("escape_pods triggered");
 		Ship* oldFlagship = player.Flagship();
 		if (oldFlagship) 
-		{
-			// get all pods of the flagship
-			std::vector<std::shared_ptr<Ship>> escapePods;
-			for (const Ship::Bay &bay : oldFlagship->Bays())
-				if (bay.ship && bay.ship->Attributes().Category() == "Pod") 
-				{
-					Logger::LogInfo("pod "+bay.ship->Name()+" added to ship");
-					escapePods.push_back(bay.ship);
-					Logger::LogInfo("pod"+bay.ship->Name()+" is already in player.ships vector: "
-						+to_string(std::find(player.Ships().begin(), player.Ships().end(), bay.ship) != player.Ships().end())); // always true
-				}
-
-			if (!escapePods.empty())
-			{
-				bool firstPod = true;
-				for (const auto& pod : escapePods) {
-					// Set up pod as independent entity
-					oldFlagship->RemoveShipFromBay(pod);
-					pod->SetParent(nullptr);
-					pod->SetIsParked(false);
-					// Pods are one-use ships; they cannot return once deployed. This also removes the identation in the PlayerInfoPanel
-					pod->SetCanBeCarried(false);
-					pod->SetSystem(oldFlagship->GetSystem()); // a ship in a bay has its 'system' set to nullptr
-
-					// Set initial velocity, position
-					Angle launchAngle = oldFlagship->Facing() + Angle::Random(45) - Angle::Random(45);
-					Point launchPos = oldFlagship->Position();
-					Point launchVel = oldFlagship->Velocity() + launchAngle.Unit() * (pod->MaxVelocity() * 0.8); // escape as fast as possible
-					pod->Place(launchPos, launchVel, launchAngle, false);
-
-					// Crew transfer; Transfer as much crew as possible
-					int podMaxCrew = pod->Attributes().Get("bunks") - pod->Crew();
-					int podRequiredCrew = pod->RequiredCrew();
-					int flagshipCrew = oldFlagship->Crew();
-					int crewToTransfer;
-					Logger::LogInfo(pod->Name() + " has current/max/required crew: " + to_string(pod->Crew()) + "/" + to_string(podMaxCrew) + "/" + to_string(podRequiredCrew));
-
-					if (podMaxCrew > 0 && flagshipCrew > 0)
-					{
-						// currently, the game can only handle crew > RequiredCrew in the flagship, so for
-						// all other pods wel'll only transfer crew = RequiredCrew
-						if(firstPod)
-						{
-							firstPod = false;
-							crewToTransfer = min(flagshipCrew, podMaxCrew);
-						}
-						else
-							crewToTransfer = min(flagshipCrew, podRequiredCrew);
-						
-						Logger::LogInfo("-> Transferring " + to_string(crewToTransfer) + " crew to " + pod->Name());
-						oldFlagship->AddCrew(-crewToTransfer);
-						pod->AddCrew(crewToTransfer);
-					}
-
-					// add ship to game in the next frame
-					player.AddShipNextFrame(pod);
-				}
-
-				std::shared_ptr<Ship> newFlagshipPod = escapePods.front();
-				// The new flagship becomes the first ship, and it becomes the parent of all other ships
-				player.SetFlagship(*newFlagshipPod);
-				Messages::Add(to_string(escapePods.size())+"escape pods deploying. "+newFlagshipPod->Name()+
-					" is now your flagship.", Messages::Importance::High);
-			}
-			else
-			{
-				Messages::Add("No escape pods available on " + oldFlagship->Name() + ".", Messages::Importance::High);
-			}
-		}
+			oldFlagship->DeployEscapePods(player);
 	}
 
 	// Toggle the "deploy" command for the fleet or selected ships.
