@@ -3400,6 +3400,13 @@ bool Ship::CanBeCarried() const
 
 
 
+void Ship::SetCanBeCarried(bool can)
+{
+	canBeCarried = can;
+}
+
+
+
 bool Ship::Carry(const shared_ptr<Ship> &ship)
 {
 	if(!ship || !ship->CanBeCarried() || ship->IsDisabled())

@@ -554,26 +554,21 @@ void AI::UpdateKeys(PlayerInfo &player, const Command &activeCommands)
 				{
 					Logger::LogInfo("pod "+bay.ship->Name()+" added to ship");
 					escapePods.push_back(bay.ship);
+					Logger::LogInfo("pod"+bay.ship->Name()+" is already in player.ships vector: "
+						+to_string(std::find(player.Ships().begin(), player.Ships().end(), bay.ship) != player.Ships().end())); // always true
 				}
 
 			if (!escapePods.empty())
 			{
-				// Command all found escape pods to deploy
+				bool firstPod = true;
 				for (const auto& pod : escapePods) {
-					// pod->SetCommands(Command::DEPLOY);
-					// if (pod->IsYours()) { // Ensure player-owned pods get deploy order
-						// pod->SetDeployOrder(true);
-					// }
-
 					// Set up pod as independent entity
 					oldFlagship->RemoveShipFromBay(pod);
 					pod->SetParent(nullptr);
-					pod->SetSystem(oldFlagship->GetSystem()); // a ship in a bay has its 'system' set to nullptr
+					pod->SetIsParked(false);
+					// Pods are one-use ships; they cannot return once deployed. This also removes the identation in the PlayerInfoPanel
 					pod->SetCanBeCarried(false);
-					// Explicitly tell the pod to stay deployed and not seek docking.
-					if (pod->IsYours()) {
-						pod->SetDeployOrder(true);
-					}
+					pod->SetSystem(oldFlagship->GetSystem()); // a ship in a bay has its 'system' set to nullptr
 
 					// Set initial velocity, position
 					Angle launchAngle = oldFlagship->Facing() + Angle::Random(45) - Angle::Random(45);
@@ -585,30 +580,35 @@ void AI::UpdateKeys(PlayerInfo &player, const Command &activeCommands)
 					int podMaxCrew = pod->Attributes().Get("bunks") - pod->Crew();
 					int podRequiredCrew = pod->RequiredCrew();
 					int flagshipCrew = oldFlagship->Crew();
-
+					int crewToTransfer;
 					Logger::LogInfo(pod->Name() + " has current/max/required crew: " + to_string(pod->Crew()) + "/" + to_string(podMaxCrew) + "/" + to_string(podRequiredCrew));
 
-					if (podMaxCrew > 0 && flagshipCrew > 0) {
-						int crewToTransfer = min(flagshipCrew, podMaxCrew);
+					if (podMaxCrew > 0 && flagshipCrew > 0)
+					{
+						// currently, the game can only handle crew > RequiredCrew in the flagship, so for
+						// all other pods wel'll only transfer crew = RequiredCrew
+						if(firstPod)
+						{
+							firstPod = false;
+							crewToTransfer = min(flagshipCrew, podMaxCrew);
+						}
+						else
+							crewToTransfer = min(flagshipCrew, podRequiredCrew);
+						
 						Logger::LogInfo("-> Transferring " + to_string(crewToTransfer) + " crew to " + pod->Name());
 						oldFlagship->AddCrew(-crewToTransfer);
 						pod->AddCrew(crewToTransfer);
 					}
 
-					// add ship to game
+					// add ship to game in the next frame
 					player.AddShipNextFrame(pod);
-					
 				}
 
 				std::shared_ptr<Ship> newFlagshipPod = escapePods.front();
+				// The new flagship becomes the first ship, and it becomes the parent of all other ships
 				player.SetFlagship(*newFlagshipPod);
-				Messages::Add("All escape pods deploying. " + newFlagshipPod->Name() + " is now your flagship.", Messages::Importance::High);
-
-				// Logging to verify the state after setting the new flagship
-				for (const auto& pod : escapePods)
-				{
-					Logger::LogInfo("Pod " + pod->Name() + " parent is now: " + ((pod->GetParent() ? pod->GetParent()->Name() : "nullptr") + " and ship has crew: "+to_string(pod->Crew())));
-				}
+				Messages::Add(to_string(escapePods.size())+"escape pods deploying. "+newFlagshipPod->Name()+
+					" is now your flagship.", Messages::Importance::High);
 			}
 			else
 			{
