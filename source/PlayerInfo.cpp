@@ -1229,6 +1229,27 @@ void PlayerInfo::AddShip(const shared_ptr<Ship> &ship)
 
 
 
+// add ship to queue; all queued ships will be added to your fleet in the next frame
+void PlayerInfo::AddShipNextFrame(const shared_ptr<Ship> &ship)
+{
+	shipsToAddNextFrame.push_back(ship);
+}
+
+
+
+// retrieve all queued ships that should be added to your fleet in the next frame
+void PlayerInfo::RetrieveShipsToAddNextFrame(std::list<std::shared_ptr<Ship>>& outList)
+{
+	for(const auto& ship : shipsToAddNextFrame)
+		Logger::LogInfo("RetrieveShipsToAddToWorld: "+ship->Name()+", crew: "+to_string(ship->Crew()));
+	if (!shipsToAddNextFrame.empty())
+	{
+		outList.splice(outList.end(), shipsToAddNextFrame);
+	}
+}
+
+
+
 // Adds a ship of the given model with the given name to the player's fleet.
 void PlayerInfo::BuyShip(const Ship *model, const string &name)
 {

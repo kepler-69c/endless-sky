@@ -1822,6 +1822,9 @@ void Engine::CalculateUnpaused(const Ship *flagship, const System *playerSystem)
 	SendHails();
 	HandleMouseClicks();
 
+	// Retrieve any ships (like escape pods) queued by PlayerInfo
+	player.RetrieveShipsToAddNextFrame(newShips);
+
 	// Now, take the new objects that were generated this step and splice them
 	// on to the ends of the respective lists of objects. These new objects will
 	// be drawn this step (and the projectiles will participate in collision

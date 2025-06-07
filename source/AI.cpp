@@ -544,42 +544,75 @@ void AI::UpdateKeys(PlayerInfo &player, const Command &activeCommands)
 	if (activeCommands.Has(Command::ESCAPE_PODS))
 	{
 		Logger::LogInfo("escape_pods triggered");
-		Ship* currentFlagship = player.Flagship(); 
-		if (currentFlagship) 
+		Ship* oldFlagship = player.Flagship();
+		if (oldFlagship) 
 		{
 			// get all pods of the flagship
-			std::vector<std::shared_ptr<Ship>> escapePodsInBays;
-			for (const Ship::Bay &bay : currentFlagship->Bays())
+			std::vector<std::shared_ptr<Ship>> escapePods;
+			for (const Ship::Bay &bay : oldFlagship->Bays())
 				if (bay.ship && bay.ship->Attributes().Category() == "Pod") 
 				{
-					Logger::LogInfo("pod added to ship");
-					escapePodsInBays.push_back(bay.ship);
+					Logger::LogInfo("pod "+bay.ship->Name()+" added to ship");
+					escapePods.push_back(bay.ship);
 				}
 
-			if (!escapePodsInBays.empty())
+			if (!escapePods.empty())
 			{
-				// command all found escape pods to deploy
-				for (const auto& pod : escapePodsInBays) {
-					pod->SetCommands(Command::DEPLOY);
-					if (pod->IsYours()) { // Ensure player-owned pods get deploy order
+				// Command all found escape pods to deploy
+				for (const auto& pod : escapePods) {
+					// pod->SetCommands(Command::DEPLOY);
+					// if (pod->IsYours()) { // Ensure player-owned pods get deploy order
+						// pod->SetDeployOrder(true);
+					// }
+
+					// Set up pod as independent entity
+					oldFlagship->RemoveShipFromBay(pod);
+					pod->SetParent(nullptr);
+					pod->SetSystem(oldFlagship->GetSystem()); // a ship in a bay has its 'system' set to nullptr
+					pod->SetCanBeCarried(false);
+					// Explicitly tell the pod to stay deployed and not seek docking.
+					if (pod->IsYours()) {
 						pod->SetDeployOrder(true);
 					}
+
+					// Set initial velocity, position
+					Angle launchAngle = oldFlagship->Facing() + Angle::Random(45) - Angle::Random(45);
+					Point launchPos = oldFlagship->Position();
+					Point launchVel = oldFlagship->Velocity() + launchAngle.Unit() * (pod->MaxVelocity() * 0.8); // escape as fast as possible
+					pod->Place(launchPos, launchVel, launchAngle, false);
+
+					// Crew transfer; Transfer as much crew as possible
+					int podMaxCrew = pod->Attributes().Get("bunks") - pod->Crew();
+					int podRequiredCrew = pod->RequiredCrew();
+					int flagshipCrew = oldFlagship->Crew();
+
+					Logger::LogInfo(pod->Name() + " has current/max/required crew: " + to_string(pod->Crew()) + "/" + to_string(podMaxCrew) + "/" + to_string(podRequiredCrew));
+
+					if (podMaxCrew > 0 && flagshipCrew > 0) {
+						int crewToTransfer = min(flagshipCrew, podMaxCrew);
+						Logger::LogInfo("-> Transferring " + to_string(crewToTransfer) + " crew to " + pod->Name());
+						oldFlagship->AddCrew(-crewToTransfer);
+						pod->AddCrew(crewToTransfer);
+					}
+
+					// add ship to game
+					player.AddShipNextFrame(pod);
+					
 				}
 
-				std::shared_ptr<Ship> newFlagshipPod = escapePodsInBays.front();
-
-				// A ship in a bay has its 'system' pointer as nullptr. Set it to the carrier's system before
-				// making it the flagship to prevent crashes when the engine checks the flagship's system.
-				if (newFlagshipPod->GetSystem() == nullptr) {
-					const System* systemForPod = player.GetSystem();
-					newFlagshipPod->SetSystem(systemForPod);
-				}
+				std::shared_ptr<Ship> newFlagshipPod = escapePods.front();
 				player.SetFlagship(*newFlagshipPod);
 				Messages::Add("All escape pods deploying. " + newFlagshipPod->Name() + " is now your flagship.", Messages::Importance::High);
+
+				// Logging to verify the state after setting the new flagship
+				for (const auto& pod : escapePods)
+				{
+					Logger::LogInfo("Pod " + pod->Name() + " parent is now: " + ((pod->GetParent() ? pod->GetParent()->Name() : "nullptr") + " and ship has crew: "+to_string(pod->Crew())));
+				}
 			}
 			else
 			{
-				Messages::Add("No escape pods available on " + currentFlagship->Name() + ".", Messages::Importance::High);
+				Messages::Add("No escape pods available on " + oldFlagship->Name() + ".", Messages::Importance::High);
 			}
 		}
 	}
