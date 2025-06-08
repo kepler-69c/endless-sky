@@ -3571,23 +3571,32 @@ void Ship::DeployEscapePods(PlayerInfo &player)
 		Point launchVel = this->Velocity() + launchAngle.Unit() * pod->MaxVelocity(); // escape as fast as possible
 		pod->Place(launchPos, launchVel, launchAngle, false);
 
-		// Crew transfer; Transfer as much crew as possible
-		int podMaxCrew = pod->Attributes().Get("bunks") - pod->Crew();
+		// transfer passengers, cargo and crew
 		int podRequiredCrew = pod->RequiredCrew();
-		// currently, the game can only handle crew > RequiredCrew in the flagship, so for
-		// all other pods wel'll only transfer crew = RequiredCrew
-		int podTransferableCrew = firstPod ? podMaxCrew : podRequiredCrew;
+		int podMaxCrew = pod->Attributes().Get("bunks") - pod->Crew();
 		int flagshipCrew = this->Crew();
-		int crewToTransfer;
-		Logger::LogInfo(pod->Name() + " has current/max/required crew: " + to_string(pod->Crew()) + "/" + to_string(podMaxCrew) + "/" + to_string(podRequiredCrew));
-
-		if (podMaxCrew > 0 && flagshipCrew > 0)
+		if(podRequiredCrew > 0 && flagshipCrew > 0)
 		{
-			crewToTransfer = min(flagshipCrew, podTransferableCrew);
-			Logger::LogInfo("-> Transferring " + to_string(crewToTransfer) + " crew to " + pod->Name());
+			int crewToTransfer = min(flagshipCrew, podRequiredCrew);
 			this->AddCrew(-crewToTransfer);
 			pod->AddCrew(crewToTransfer);
 		}
+
+		pod->Cargo().SetBunks(podMaxCrew - pod->Crew());
+		cargo.TransferAll(pod->Cargo(), true);
+		int podRemainingBunks = pod->Cargo().BunksFree();
+		flagshipCrew = this->Crew();
+
+		// currently, the game can only handle crew > RequiredCrew in the flagship, so only fill up flagship pod
+		if(firstPod && podRemainingBunks > 0 && flagshipCrew > 0)
+		{
+			int crewToTransfer = min(podRemainingBunks, flagshipCrew);
+			this->AddCrew(-crewToTransfer);
+			pod->AddCrew(crewToTransfer);
+		}
+
+		// Logger::LogInfo(pod->Name() + " has current/max/required crew: " + to_string(pod->Crew()) + "/" + to_string(podMaxCrew) + "/" + to_string(podRequiredCrew));
+			// Logger::LogInfo("-> Transferring " + to_string(crewToTransfer) + " crew to " + pod->Name());
 
 		if(firstPod)
 			firstPod = false;
