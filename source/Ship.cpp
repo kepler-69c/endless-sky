@@ -1745,14 +1745,6 @@ void Ship::Launch(list<shared_ptr<Ship>> &ships, vector<Visual> &visuals)
 			&& ((bay.ship->Commands().Has(Command::DEPLOY) && !Random::Int(40 + 20 * !bay.ship->attributes.Get("automaton")))
 			|| (ejecting && !Random::Int(6))))
 		{
-			// Do not launch escap pods via normal DEPLOY command
-			if(!ejecting && bay.ship->IsEscapePod()) {
-				Logger::LogInfo("not ejecting pod");
-				// clear any deploy orders
-				if (bay.ship->HasDeployOrder())
-					bay.ship->SetDeployOrder(false);
-				continue;
-			}
 			// Resupply any ships launching of their own accord.
 			if(!ejecting)
 			{
