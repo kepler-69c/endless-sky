@@ -543,7 +543,6 @@ void AI::UpdateKeys(PlayerInfo &player, const Command &activeCommands)
 
 	if (activeCommands.Has(Command::ESCAPE_PODS))
 	{
-		Logger::LogInfo("escape_pods triggered");
 		Ship* oldFlagship = player.Flagship();
 		if (oldFlagship) 
 			oldFlagship->DeployEscapePods(player);

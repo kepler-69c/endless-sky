@@ -1746,7 +1746,7 @@ void Ship::Launch(list<shared_ptr<Ship>> &ships, vector<Visual> &visuals)
 			|| (ejecting && !Random::Int(6))))
 		{
 			// Do not launch escap pods via normal DEPLOY command
-			if(!ejecting && bay.ship->Attributes().Category() == "Pod") {
+			if(!ejecting && bay.ship->IsEscapePod()) {
 				Logger::LogInfo("not ejecting pod");
 				// clear any deploy orders
 				if (bay.ship->HasDeployOrder())
@@ -3075,8 +3075,7 @@ int Ship::RequiredCrew() const
 		return 0;
 	// Escape pods require no crew while in a bay (currentSystem == nullptr).
 	// Also, don't require crew i fthe pod is landed on a planet.
-	if(attributes.Category() == "Pod" &&
-		(!currentSystem || GetPlanet()))
+	if(IsEscapePod() && (!currentSystem || GetPlanet()))
 		return 0;
 	
 	// All other ships need at least one.
@@ -3485,7 +3484,7 @@ const vector<Ship::Bay> &Ship::Bays() const
 
 
 
-// Adjust the positions and velocities of any visible carried fighters, pods or
+// Adjust the positions and velocities of any visible carried fighters, escape pods or
 // drones. If any are visible, return true.
 bool Ship::PositionFighters() const
 {
@@ -3520,11 +3519,19 @@ bool Ship::RemoveShipFromBay(const std::shared_ptr<Ship>& shipToRemove)
 
 
 
+// Is this ship an escpae pod?
+bool Ship::IsEscapePod() const
+{
+	return attributes.Category() == "Escape Pod";
+}
+
+
+
 // Check if the ship carries any pods that could be launched.
 bool Ship::HasEscapePods() const
 {
 	for(const Bay &bay : bays)
-		if(bay.ship && bay.category == "Pod")
+		if(bay.ship && bay.ship->IsEscapePod())
 			return true;
 	return false;
 }
@@ -3536,7 +3543,7 @@ vector<shared_ptr<Ship>> Ship::GetEscapePods() const
 {
 	vector<shared_ptr<Ship>> pods;
 	for(const Bay &bay : bays)
-		if(bay.ship && bay.category == "Pod")
+		if(bay.ship && bay.ship->IsEscapePod())
 			pods.push_back(bay.ship);
 	return pods;
 }
@@ -3551,7 +3558,6 @@ void Ship::DeployEscapePods(PlayerInfo &player)
 	if (escapePods.empty())
 	{
 		Messages::Add("No escape pods available on " + Name() + ".", Messages::Importance::High);
-		Logger::LogInfo("No escape pods available on " + Name() + ".");
 		return;
 	}
 
@@ -3594,9 +3600,6 @@ void Ship::DeployEscapePods(PlayerInfo &player)
 			this->AddCrew(-crewToTransfer);
 			pod->AddCrew(crewToTransfer);
 		}
-
-		// Logger::LogInfo(pod->Name() + " has current/max/required crew: " + to_string(pod->Crew()) + "/" + to_string(podMaxCrew) + "/" + to_string(podRequiredCrew));
-			// Logger::LogInfo("-> Transferring " + to_string(crewToTransfer) + " crew to " + pod->Name());
 
 		if(firstPod)
 			firstPod = false;
