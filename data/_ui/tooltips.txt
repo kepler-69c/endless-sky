@@ -546,7 +546,7 @@ tip "piercing protection:"
 tip "piercing resistance:"
 	`Piercing damage resisted on all incoming projectiles, preventing damage from leaking through the shields to the hull.`
 
-tip "pod bays:"
+tip "escape pod bays:"
 	`The number of escape pods that this ship can carry.`
 
 tip "radar jamming:"
