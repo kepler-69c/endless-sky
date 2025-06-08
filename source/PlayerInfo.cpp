@@ -1965,6 +1965,11 @@ const CargoHold &PlayerInfo::DistributeCargo()
 		{
 			if(ship != flagship)
 			{
+				// Pods should not carry passengers / cargo.
+				if(ship->Attributes().Category() == "Pod")
+				{
+					continue;
+				}
 				ship->Cargo().SetBunks(ship->Attributes().Get("bunks") - ship->RequiredCrew());
 				cargo.TransferAll(ship->Cargo());
 			}
