@@ -1529,6 +1529,10 @@ shared_ptr<Ship> AI::FindTarget(const Ship &ship) const
 		if(!CanPursue(ship, *foe))
 			continue;
 
+		// Check if this foe is an escape pod and if the current ship's personality should ignore it.
+		if (foe->IsEscapePod() && !person.TargetsEscapePods())
+			continue;
+
 		// Estimate the range a second from now, so ships prefer foes they are approaching.
 		double range = (foe->Position() + 60. * foe->Velocity()).Distance(
 			ship.Position() + 60. * ship.Velocity());
@@ -3988,6 +3992,9 @@ void AI::AutoFire(const Ship &ship, FireCommand &command, bool secondary, bool i
 				continue;
 			// Don't hit ships that cannot be hit without targeting
 			if(target != currentTarget.get() && !FighterHitHelper::IsValidTarget(target))
+				continue;
+			// Check if this foe is an escape pod and if the current ship's personality should ignore it.
+			if (target->IsEscapePod() && !person.TargetsEscapePods())
 				continue;
 
 			Point p = target->Position() - start;
