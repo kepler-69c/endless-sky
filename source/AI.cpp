@@ -544,8 +544,12 @@ void AI::UpdateKeys(PlayerInfo &player, const Command &activeCommands)
 	if (activeCommands.Has(Command::ESCAPE_PODS))
 	{
 		Ship* oldFlagship = player.Flagship();
-		if (oldFlagship) 
-			oldFlagship->DeployEscapePods(player);
+		if (oldFlagship) {
+			if(oldFlagship->HasEscapePods())
+				oldFlagship->DeployEscapePods(player);
+			else
+				Messages::Add("No escape pods available on flagship.", Messages::Importance::High);
+		}
 	}
 
 	// Toggle the "deploy" command for the fleet or selected ships.

@@ -3548,10 +3548,7 @@ void Ship::DeployEscapePods(PlayerInfo &player)
 	std::vector<std::shared_ptr<Ship>> escapePods = GetEscapePods();
 
 	if (escapePods.empty())
-	{
-		Messages::Add("No escape pods available on " + Name() + ".", Messages::Importance::High);
 		return;
-	}
 
 	bool firstPod = true;
 	for (const auto& pod : escapePods) {
@@ -3598,6 +3595,15 @@ void Ship::DeployEscapePods(PlayerInfo &player)
 
 		// queue ship to be rendered from the next frame on
 		player.AddShipNextFrame(pod);
+	}
+
+	// if the flagship deployed escape pods, change the flagship. Else, only change the parent of the ships
+	bool isFlagship = (isYours && this == player.Flagship());
+	if(!isFlagship)
+	{
+		for(auto &pod : escapePods)
+			pod->SetParent(player.FlagshipPtr());
+		return;
 	}
 
 	std::shared_ptr<Ship> newFlagshipPod = escapePods.front();
