@@ -1541,6 +1541,20 @@ void Ship::SetDeployOrder(bool shouldDeploy)
 
 
 
+void Ship::SetEjectEscapePodsOrder(bool shouldEject)
+{
+	this->shouldEjectEscapePods = shouldEject;
+}
+
+
+
+bool Ship::HasEjectEscapePodsOrder() const
+{
+	return shouldEjectEscapePods;
+}
+
+
+
 const Personality &Ship::GetPersonality() const
 {
 	return personality;
@@ -3200,7 +3214,7 @@ double Ship::CurrentSpeed() const
 // DamageDealt from that weapon. The return value is a ShipEvent type,
 // which may be a combination of PROVOKED, DISABLED, and DESTROYED.
 // Create any target effects as sparks.
-int Ship::TakeDamage(vector<Visual> &visuals, const DamageDealt &damage, const Government *sourceGovernment, PlayerInfo &player)
+int Ship::TakeDamage(vector<Visual> &visuals, const DamageDealt &damage, const Government *sourceGovernment)
 {
 	damageOverlayTimer = TOTAL_DAMAGE_FRAMES;
 
@@ -3257,8 +3271,9 @@ int Ship::TakeDamage(vector<Visual> &visuals, const DamageDealt &damage, const G
 	}
 	if(!wasDestroyed && IsDestroyed())
 	{
+		// mark the escape pods as deployable for the engine
 		if(HasEscapePods())
-	        DeployEscapePods(player);
+			shouldEjectEscapePods = true;
 
 		type |= ShipEvent::DESTROY;
 
@@ -3543,8 +3558,11 @@ vector<shared_ptr<Ship>> Ship::GetEscapePods() const
 
 
 // deploy all the pods that this ship carries.
-void Ship::DeployEscapePods(PlayerInfo &player)
+void Ship::DeployEscapePods(list<shared_ptr<Ship>> &ships, vector<Visual> &visuals, PlayerInfo &player)
 {
+	if(!HasEscapePods() || !this->shouldEjectEscapePods)
+		return;
+
 	std::vector<std::shared_ptr<Ship>> escapePods = GetEscapePods();
 
 	if (escapePods.empty())
@@ -3594,7 +3612,7 @@ void Ship::DeployEscapePods(PlayerInfo &player)
 			firstPod = false;
 
 		// queue ship to be rendered from the next frame on
-		player.AddShipNextFrame(pod);
+		ships.push_back(pod);
 	}
 
 	// if the flagship deployed escape pods, change the flagship. Else, only change the parent of the ships

@@ -218,6 +218,9 @@ public:
 	// The player can selectively deploy their carried ships, rather than just all / none.
 	void SetDeployOrder(bool shouldDeploy = true);
 	bool HasDeployOrder() const;
+	// Should the eject pods be ejected? This will convert one of the pods to the new flagship, if this a flagship
+	void SetEjectEscapePodsOrder(bool shouldEject = true);
+	bool HasEjectEscapePodsOrder() const;
 
 	// Access the ship's personality, which affects how the AI behaves.
 	const Personality &GetPersonality() const;
@@ -438,7 +441,7 @@ public:
 	// DamageDealt from that weapon. The return value is a ShipEvent type,
 	// which may be a combination of PROVOKED, DISABLED, and DESTROYED.
 	// Create any target effects as sparks.
-	int TakeDamage(std::vector<Visual> &visuals, const DamageDealt &damage, const Government *sourceGovernment, PlayerInfo &player);
+	int TakeDamage(std::vector<Visual> &visuals, const DamageDealt &damage, const Government *sourceGovernment);
 	// Apply a force to this ship, accelerating it. This might be from a weapon
 	// impact, or from firing a weapon, for example.
 	void ApplyForce(const Point &force, bool gravitational = false);
@@ -478,7 +481,7 @@ public:
 	// Get all escape pods that this ship carries.
 	std::vector<std::shared_ptr<Ship>> GetEscapePods() const;
 	// Deploy all escape pods that this ship carries.
-	void DeployEscapePods(PlayerInfo &player);
+	void DeployEscapePods(std::list<std::shared_ptr<Ship>> &ships, std::vector<Visual> &visuals, PlayerInfo &player);
 
 	// Get cargo information.
 	CargoHold &Cargo();
@@ -638,6 +641,7 @@ private:
 	bool isYours = false;
 	bool isParked = false;
 	bool shouldDeploy = false;
+	bool shouldEjectEscapePods = false;
 	bool isOverheated = false;
 	bool isDisabled = false;
 	bool isBoarding = false;

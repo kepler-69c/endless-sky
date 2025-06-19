@@ -541,12 +541,13 @@ void AI::UpdateKeys(PlayerInfo &player, const Command &activeCommands)
 	if(player.Ships().size() < 2)
 		return;
 
+	// Eject escape pods, if any in bays
 	if (activeCommands.Has(Command::ESCAPE_PODS))
 	{
 		Ship* oldFlagship = player.Flagship();
 		if (oldFlagship) {
 			if(oldFlagship->HasEscapePods())
-				oldFlagship->DeployEscapePods(player);
+				oldFlagship->SetEjectEscapePodsOrder(true);
 			else
 				Messages::Add("No escape pods available on flagship.", Messages::Importance::High);
 		}

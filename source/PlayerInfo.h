@@ -164,9 +164,6 @@ public:
 	std::map<const std::shared_ptr<Ship>, std::vector<std::string>> FlightCheck() const;
 	// Add a captured ship to your fleet.
 	void AddShip(const std::shared_ptr<Ship> &ship);
-	// Queue a ship to be added to the fleet by the Engine next frame.
-	void AddShipNextFrame(const std::shared_ptr<Ship>& ship);
-	void RetrieveShipsToAddNextFrame(std::list<std::shared_ptr<Ship>>& outList);
 	// Buy, receive or sell a ship.
 	// In the case of a gift, return a pointer to the newly instantiated ship.
 	void BuyShip(const Ship *model, const std::string &name);
@@ -415,7 +412,6 @@ private:
 
 	std::shared_ptr<Ship> flagship;
 	std::vector<std::shared_ptr<Ship>> ships;
-	std::list<std::shared_ptr<Ship>> shipsToAddNextFrame;
 	std::vector<std::weak_ptr<Ship>> selectedShips;
 	std::map<const Ship *, int> groups;
 	CargoHold cargo;

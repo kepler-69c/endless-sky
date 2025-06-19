@@ -1822,9 +1822,6 @@ void Engine::CalculateUnpaused(const Ship *flagship, const System *playerSystem)
 	SendHails();
 	HandleMouseClicks();
 
-	// Retrieve any ships (like escape pods) queued by PlayerInfo
-	player.RetrieveShipsToAddNextFrame(newShips);
-
 	// Now, take the new objects that were generated this step and splice them
 	// on to the ends of the respective lists of objects. These new objects will
 	// be drawn this step (and the projectiles will participate in collision
@@ -1852,6 +1849,12 @@ void Engine::CalculateUnpaused(const Ship *flagship, const System *playerSystem)
 	// Damage ships from any active weather events.
 	for(Weather &weather : activeWeather)
 		DoWeather(weather);
+
+	// After all damage in this frame is calculated, deploy escape pods if ship is destroyed (or ordered to do so).
+	// It is important to deploy pods before the ShipEvent::DESTROY for the original flagship is processed (in the next frame)
+	for (const auto &ship_ptr : ships)
+		if (ship_ptr->HasEjectEscapePodsOrder())
+			ship_ptr->DeployEscapePods(newShips, newVisuals, player);
 
 	// Check for flotsam collection (collisions with ships).
 	for(const shared_ptr<Flotsam> &it : flotsam)
@@ -2477,7 +2480,7 @@ void Engine::DoCollisions(Projectile &projectile)
 
 				// Only directly targeted ships get provoked by blast weapons.
 				int eventType = ship->TakeDamage(visuals, damage.CalculateDamage(*ship, ship == hit),
-					targeted ? gov : nullptr, player);
+					targeted ? gov : nullptr);
 				if(eventType)
 					eventQueue.emplace_back(gov, ship->shared_from_this(), eventType);
 			}
@@ -2493,7 +2496,7 @@ void Engine::DoCollisions(Projectile &projectile)
 		{
 			if(collisionType == CollisionType::SHIP)
 			{
-				int eventType = shipHit->TakeDamage(visuals, damage.CalculateDamage(*shipHit), gov, player);
+				int eventType = shipHit->TakeDamage(visuals, damage.CalculateDamage(*shipHit), gov);
 				if(eventType)
 					eventQueue.emplace_back(gov, shipHit, eventType);
 			}
@@ -2550,7 +2553,7 @@ void Engine::DoWeather(Weather &weather)
 		for(Body *body : affectedShips)
 		{
 			Ship *hit = reinterpret_cast<Ship *>(body);
-			hit->TakeDamage(visuals, damage.CalculateDamage(*hit), nullptr, player);
+			hit->TakeDamage(visuals, damage.CalculateDamage(*hit), nullptr);
 		}
 	}
 }
