@@ -3510,21 +3510,6 @@ bool Ship::PositionFighters() const
 
 
 
-bool Ship::RemoveShipFromBay(const std::shared_ptr<Ship>& shipToRemove)
-{
-	for (Bay &bay : bays)
-	{
-		if (bay.ship == shipToRemove)
-		{
-			carriedMass -= bay.ship->Mass();
-			bay.ship.reset();
-			return true;
-		}
-	}
-	return false;
-}
-
-
 
 // Is this ship an escpae pod?
 bool Ship::IsEscapePod() const
@@ -3545,33 +3530,32 @@ bool Ship::HasEscapePods() const
 
 
 
-// return all the pods that this ship carries.
-vector<shared_ptr<Ship>> Ship::GetEscapePods() const
-{
-	vector<shared_ptr<Ship>> pods;
-	for(const Bay &bay : bays)
-		if(bay.ship && bay.ship->IsEscapePod())
-			pods.push_back(bay.ship);
-	return pods;
-}
-
-
-
 // deploy all the pods that this ship carries.
 void Ship::DeployEscapePods(list<shared_ptr<Ship>> &ships, vector<Visual> &visuals, PlayerInfo &player)
 {
 	if(!HasEscapePods() || !this->shouldEjectEscapePods)
 		return;
 
-	std::vector<std::shared_ptr<Ship>> escapePods = GetEscapePods();
+	// get all escape pods and reset bays
+	vector<std::shared_ptr<Ship>> escapePods;
+	for(Bay &bay : bays)
+	{
+		if(bay.ship && bay.ship->IsEscapePod())
+		{
+			escapePods.push_back(bay.ship);
+
+			// remove the pod from the ship bay
+			carriedMass -= bay.ship->Mass();
+			bay.ship.reset();
+		}
+	}
 
 	if (escapePods.empty())
 		return;
 
 	bool firstPod = true;
-	for (const auto& pod : escapePods) {
+	for (const shared_ptr<Ship>& pod : escapePods) {
 		// Set up pod as independent entity
-		this->RemoveShipFromBay(pod);
 		pod->SetParent(nullptr);
 		pod->SetIsParked(false);
 		// Pods are one-use ships; they cannot return once deployed. This also removes their identation in the PlayerInfoPanel
